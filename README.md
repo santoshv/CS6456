@@ -1,4 +1,4 @@
-cs8903
+CS8903
 ======
 
 Special Problem
