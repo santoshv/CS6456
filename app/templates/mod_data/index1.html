@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>Streamgraph</title>
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 960px;
+}
+
+div.tooltip {   
+  position: absolute;           
+  text-align: center;           
+  width: 200px;                  
+  height: 60px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: lightsteelblue;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+div.topicbox {   
+  overflow : scroll; 
+}
+
+div.wordbox {   
+  overflow : scroll; 
+}
+div.commentbox {   
+  overflow : scroll; 
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+ 
+span.ui-draggable {
+  cursor: move;
+}
+span.ui-state-disabled {
+  cursor: not-allowed;
+}
+
+li.ui-draggable {
+  cursor: move;
+}
+li.ui-state-disabled {
+  cursor: not-allowed;
+}
+.scrollit {
+    overflow:scroll;
+    height:500px;
+}
+
+.highlight {
+    /*background-color: #FFFF88;*/
+}
+
+.ui-autocomplete { border: 1px solid #999; width: 200px; background: #fff; cursor: default; overflow: auto; font-weight: normal; color: #3399ff;}
+/*.autocomplete-suggestion { padding: 10px 5px; font-size: 1.2em; white-space: nowrap; overflow: hidden; }
+.autocomplete-selected { background: #f0f0f0; }
+.autocomplete-suggestions strong {  }*/
+
+</style>
+<div>
+<table align="center" border="1" rows = 12 cols = 10 cellpadding="1" cellspacing="1" style="width: 900px; height: 560px;">
+  <tbody>
+    <tr height="25px" align = "center">
+      <td colspan = 10>Category : <select id="cat" onchange="refreshCategory(0)"></select></td>
+    </tr>
+    <tr height="25px" align = "center">
+      <td width = "200px">Topics</td>
+      <td width = "200px">Words</td>
+      <td width = "500px">Reviews</td>
+    </tr>
+    <tr rowspan = 10>
+      <td width = "200px"><div class="scrollit">
+        <div class="topicbox" id="check" style="margin-left: 25px;margin-top: 25px;"></div></div></td>
+      <td width = "200px"><div class="scrollit"><div class="wordbox" id="wordbox"></div></div></td>
+      <td width = "500px">
+        <div class="scrollit"><div class="col commentbox" id = "commentbox">
+          <div align = "center">
+            <label for="tags">Search word: </label>
+            <input id="tags">
+            <button onclick="addWordToTopic()">Add word</button><br><br>
+          </div>
+        </div></div></td>
+    </tr>
+    <tr height = "50px">
+      <td colspan = 3 width = "900px" align="middle">
+        <button onclick="createNewTopic()">Create New Topic</button>
+        <button onclick="renameTopic()">Rename Topic</button>
+        <button onclick="removeTopic()">Remove Topic</button>
+        <button onclick="removeTopicWord()">Remove word from topic</button>
+        <button type="button" class="btn">Generate Vis</button>
+        <button onclick="showProducts()">View Products</button>
+    </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+<div class="themeriver"></div>
+<div class="productlist" id = "productlist" style="display:none">
+  <center><h3>Products related to your topics</h3></center>
+  <table id ="prod_table" align="center" border="1" rows = 2 cols = 2 cellpadding="1" cellspacing="1" style="width: 900px;">
+    <tbody>
+      <tr>
+          <td align="top">
+            <a title="Nike Men's Revolution 2 Running Shoe" href="http://www.amazon.com/Nike-REVOLUTION-RUNNING-SHOES-VARSITY/dp/B0098IGQZI/ref=sr_1_1?ie=UTF8&amp;qid=1427041604&amp;sr=8-1&amp;keywords=nike+shoes">
+              <h3 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Nike Men's Revolution 2 Running Shoe</h3>
+              <span style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">$44.00</span>
+            </a>
+            <br>
+            <img src="/static/lib/img1.png" alt="Rating" style="width:80px;height:18px">
+            <div>
+              <h5 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Product Description</h5>
+              <span>... runner with a neutral gait. A <em>shoe</em> that delivers breathable comfort ...</span>
+            </div>
+          </td>
+          <td align="top">
+            <a title="Nike Men's Free 5.0 Running Shoe" href="http://www.amazon.com/Nike-Black-White-Anthracite-Running/dp/B00EQBER26/ref=sr_1_2?ie=UTF8&amp;qid=1427041604&amp;sr=8-2&amp;keywords=nike+shoes">
+              <h3 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Nike Men's Free 5.0 Running Shoe</h3>
+              <span style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">$70.34</span>
+            </a>
+            <br>
+            <img src="/static/lib/img2.png" alt="Rating" style="width:80px;height:18px">
+            <div>
+              <h5 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Product Description</h5>
+              <span>Nike Free Phylite midsole doubles as an outsole for lightweight cushioning, durability and...</span>
+            </div>
+          </td>
+      </tr>
+      <tr>
+          <td align="top">
+            <a title="Nike Free Trainer 5.0 (V5) Training Shoe" href="http://www.amazon.com/Nike-Trainer-Training-Black-White/dp/B00K35H46K/ref=sr_1_3?ie=UTF8&amp;qid=1427041604&amp;sr=8-3&amp;keywords=nike+shoes">
+              <h3 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Nike Free Trainer 5.0 (V5) Training Shoe</h3>
+              <span style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">$40.00</span>
+            </a>
+            <br>
+            <img src="/static/lib/img3.png" alt="Rating" style="width:80px;height:18px">
+            <div>
+              <h5 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Product Description</h5>
+              <span>Nike's most versatile training shoe for the athlete who needs to be ...</span>
+            </div>
+          </td>
+          <td align="top">
+            <a title="Nike Womens Free 5.0+ Running Shoes" href="http://www.amazon.com/Nike-Womens-Black-Anthracite-Running/dp/B00EQDXPW2/ref=sr_1_5?ie=UTF8&amp;qid=1427041604&amp;sr=8-5&amp;keywords=nike+shoes">
+              <h3 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Nike Womens Free 5.0+ Running Shoes</h3>
+              <span style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">$59.99</span>
+            </a>
+            <br>
+            <img src="/static/lib/img4.png" alt="Rating" style="width:80px;height:18px">
+            <div>
+              <h5 style="padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;">Product Description</h5>
+              <span>The NIKE Free Run+ 5.0 women's running shoes take their cue from the ...</span>
+            </div>
+          </td>
+      </tr>
+    </tbody>
+  </table>
+
+</div>
+
+<script src="/static/lib/d3.v3.min.js"></script>
+<script src="/static/lib/d3.tip.v0.6.3.js"></script>
+<script src="/static/lib/jquery-1.10.2.min.js"></script>
+<script src="/static/lib/jquery-ui.min.js"></script>
+<script src="/static/lib/highlight/jquery.highlight.js"></script>
+
+<script>
+$(function(){
+  $.ajax({
+      contentType: 'application/json; charset=utf-8',
+      url:'/data/topic4',
+      dataType: 'text',
+      data: "category=Shoes",
+      success: function (results) {
+        var results1 = JSON.parse("[" + results + "]");
+        var results = results1[0];
+        var word_arr = [];
+        for (var i=0; i<results.length; i++){
+          for (var j=0;j<results[i]["words"].length; j++){
+            if($.inArray(results[i]["words"][j]['word'], word_arr) === -1) word_arr.push(results[i]["words"][j]['word']);
+          }
+        }
+        $( "#tags" ).autocomplete({
+          source: word_arr
+        });
+    },
+    error: function (request, status, error) {
+        //alert(error);
+    }
+  });
+});
+$(function(){
+  $.ajax({
+      contentType: 'application/json; charset=utf-8',
+      url:'/data/loadCat',
+      dataType: 'json',
+      success: function (results) { 
+        var categories = results.categories;
+        //var categories = ["shoes","cat2","cat3","cat4","cat5","cat6","cat7","cat8","cat9","cat10","cat11","cat12","cat13","cat14"]
+
+        var select = document.getElementById("cat");
+        for(var i = categories.length-1; i>=0 ; i--) {
+            var option = document.createElement('option');
+            option.text = option.value = categories[i];
+            select.add(option, 0);
+        }
+        refreshCategory(1);
+        refreshWords(results.wordjson);
+        var word_arr = []
+        for (var i=0;i<10;i++){
+          word_arr.push(results.wordjson[i].key);
+        }
+        loadVis(word_arr, results.wordjson);
+      },
+      error: function (request, status, error) {
+          //alert(error);
+      }
+  });
+});
+/*********************************************************************************/
+var DragDropManager = {
+  dragged: null,
+  droppable: null,
+  draggedMatchesTarget: function() {
+    if (!this.droppable) return false;
+    return true;
+  }
+}
+
+function showProducts(){
+  var searchIDs = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (searchIDs.length<1){
+    alert("Please select at least one topic to view related products")
+    return;
+  }
+  var topicList = searchIDs.join(",")
+  var cat_select = document.getElementById("cat").value;
+  for (var i=0;i<searchIDs.length;i++){
+    $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/topic8',
+        dataType: 'json',
+        data: "topics="+topicList+"&category="+cat_select,
+        success: function (results) { 
+          var table = document.getElementById("prod_table");
+          for (var i=0; i< results.length; i+=2){
+            var row = table.insertRow(0);
+
+            var cell1 = row.insertCell(0);
+            var cell2 = row.insertCell(1);
+
+            cell1.align = "top";
+            cell1.innerHTML = "<a title="+results[i].title+" href=http://www.amazon.com/Nike-Womens-Black-Anthracite-Running/dp/B00EQDXPW2/ref=sr_1_5?ie=UTF8&amp;qid=1427041604&amp;sr=8-5&amp;keywords=nike+shoes > <h3 style= 'padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;'>"+results[i].title+"</h3><span style='padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;'>"+results[i].price+"</span> </a> <br> <img src='/static/lib/img4.png' alt=Rating style='width:80px;height:18px'>";
+
+            cell2.align = "top";            
+            cell2.innerHTML = "<a title="+results[i+1].title+" href=http://www.amazon.com/Nike-Womens-Black-Anthracite-Running/dp/B00EQDXPW2/ref=sr_1_5?ie=UTF8&amp;qid=1427041604&amp;sr=8-5&amp;keywords=nike+shoes > <h3 style= 'padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;'>"+results[i+1].title+"</h3><span style='padding-top:0px;border-top-width: 0px;margin-top: 0px;margin-bottom: 0px;'>"+results[i+1].price+"</span> </a> <br> <img src='/static/lib/img4.png' alt=Rating style='width:80px;height:18px'>";
+
+          }
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+    });
+  }
+
+  $('.productlist').show();
+  var t = $('.productlist').position().top;
+  $('body').scrollTop(t);
+
+}
+function dropTargetMouseOver(dest){
+  str = dest.innerHTML;
+  DragDropManager.droppable = str.substring(str.indexOf(">")+1);
+}
+function dropTargetMouseOut(){
+  DragDropManager.droppable = null;
+}
+
+var cat_select = document.getElementById("cat").value;
+
+$.ajax({
+      contentType: 'application/json; charset=utf-8',
+      url:'/data/loadTopics',
+      dataType: 'text',
+      data: "category="+cat_select,
+      success: function (results) {
+        var results1 = JSON.parse("[" + results + "]");
+        var results2 = results1[0];
+        showTopicBox(results2);
+      },
+      error: function (request, status, error) {
+          //alert(error);
+      }
+});
+
+function showTopicBox(results){
+  var body = d3.select("body");
+
+  var topics = results["topics"];
+
+  document.getElementById('check').innerHTML = '';
+  $('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()" onclick = "showWordBox('+0+')" style = "color:'+color(0)+';" > <input type="checkbox" id="myCheckbox" checked = "true" value = '+topics[0]+' />'+topics[0]+'</div><br><br>');
+  for(var i=1; i< topics.length; i++){
+      if (topics[i] == "dummy") continue;
+      $('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()" onclick = "showWordBox('+i+')" style = "color:'+color(i)+';"> <input type="checkbox" id="myCheckbox" value = '+topics[i]+' />'+topics[i]+'</div><br><br>');
+  }
+
+  var comments = results["comments"]; 
+  var draggables = d3.select(".commentbox").append("text");
+  var all_comments = [];
+  for(var id = 0; id< comments.length; id++){
+      var comment = comments[id]["text"];
+      var group_comment = comment.split(" ");
+      all_comments.push.apply(all_comments, group_comment)
+      all_comments.push("<BR>");
+  }
+  draggables.selectAll("span")
+            .data(all_comments)
+            .enter()
+            .append("span")
+            .attr("class","ui-draggable")
+            .html(function(d) { return d+" " });
+
+  $(".commentbox span").draggable({
+    revert: true,
+    revertDuration: 200,
+    //cursorAt: { left: -2, top: -2 }, 
+
+    start: function (e) {
+      DragDropManager.dragged = d3.select(e.target).datum();
+    },
+    // Set cursors based on matches, prepare for a drop
+    drag: function (e) {
+      matches = DragDropManager.draggedMatchesTarget();   
+      //drop_topic = DragDropManager.droppabe;
+      body.style("cursor",function() {
+        return (matches) ? "copy" : "move";
+      });
+      // Eliminate the animation on revert for matches.
+      // We have to set the revert duration here instead of "stop"
+      // in order to have the change take effect.
+      $(e.target).draggable("option","revertDuration",(matches) ? 0 : 200)
+      
+
+    },
+    // Handle the end state. For this example, disable correct drops
+    // then reset the standard cursor.
+    stop: function (e,ui) {
+      e.target.style.left = "0px"
+      if (!DragDropManager.draggedMatchesTarget()) return;
+      var targetElement = $(e.target.innerHTML);
+      console.log(targetElement.selector);
+      console.log(DragDropManager.droppable);
+
+      $("body").css("cursor","");
+      var cat_select = document.getElementById("cat").value;
+      $.ajax({
+          contentType: 'application/json; charset=utf-8',
+          url:'/data/topic1',
+          dataType: 'text',
+          data: "word="+targetElement.selector+"&topic="+DragDropManager.droppable+"&category="+cat_select,
+          success: function (results) { 
+            console.log(results);
+          },
+          error: function (request, status, error) {
+              //alert(error);
+          }
+      });
+    }
+  });
+}
+var color_x = d3.scale.category20();
+var color = d3.scale.ordinal().range(color_x.range()); 
+function showWordBox(color_i){
+  $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/topic4',
+        dataType: 'text',
+        data: "category="+cat_select,
+        success: function (results) {
+          var results1 = JSON.parse("[" + results + "]");
+          var results = results1[0];
+          var body = d3.select("body");
+          d3.select(".wordbox").selectAll("ul").remove();
+          var draggables = d3.select(".wordbox").append("ul").attr("style","list-style-type: none;");
+          
+          // var words = results[color_i]["words"];
+          var words = [];
+          var wordsweights = [];
+          for (var wi = 0; wi < results[color_i]["words"].length; wi++){
+            words.push(results[color_i]["words"][wi]['word'])
+            wordsweights.push(results[color_i]["words"][wi]['weight'])
+          }
+
+          var maxWeight = Math.max.apply(null, wordsweights);
+          
+          $(".commentbox").unhighlight();
+          var color1 = color(color_i);
+          console.log(color1);
+          
+
+          for(var wordind = 0; wordind < words.length; wordind++){
+            $(".commentbox").highlight(words[wordind]);  
+          }
+
+
+          $(".highlight").css({ "background-color": color1 });
+          
+          draggables.selectAll("li")
+                .data(words)
+                .enter()
+                .append("li")
+                .attr("style","color:"+color(color_i)+";")
+                .attr("class","ui-draggable")
+                .html(function(d,i) { return "<input type='checkbox' id='wordlist' value="+d+"><div style='display: inline-block; width: 40px; height: 15px;border:1px solid #999'><div style='display: inline-block; width: "+((40*wordsweights[i])/maxWeight)+"px; height: 15px;background-color: "+color(color_i)+";'></div></div> "+d+"</input><br>" });
+          draggables.append("br");
+          
+          $(".wordbox li").draggable({
+            revert: true,
+            revertDuration: 200,
+            //cursorAt: { left: -2, top: -2 }, 
+
+            start: function (e) {
+              DragDropManager.dragged = d3.select(e.target).datum();
+            },
+            // Set cursors based on matches, prepare for a drop
+            drag: function (e) {
+              matches = DragDropManager.draggedMatchesTarget();   
+              //drop_topic = DragDropManager.droppabe;
+              body.style("cursor",function() {
+                return (matches) ? "copy" : "move";
+              });
+              // Eliminate the animation on revert for matches.
+              // We have to set the revert duration here instead of "stop"
+              // in order to have the change take effect.
+              $(e.target).draggable("option","revertDuration",(matches) ? 0 : 200)
+              
+
+            },
+            // Handle the end state. For this example, disable correct drops
+            // then reset the standard cursor.
+            stop: function (e,ui) {
+              e.target.style.left = "0px"
+              if (!DragDropManager.draggedMatchesTarget()) return;
+              var targetElement = $(e.target.innerHTML);
+              console.log(targetElement);
+              var x = targetElement[2].data
+              console.log(x.trim());
+              console.log(DragDropManager.droppable);
+              $("body").css("cursor","");
+              var cat_select = document.getElementById("cat").value;
+              $.ajax({
+                  contentType: 'application/json; charset=utf-8',
+                  url:'/data/topic1',
+                  dataType: 'text',
+                  data: "word="+x.trim()+"&topic="+DragDropManager.droppable+"&category="+cat_select,
+                  success: function (results) { 
+                    console.log(results);
+                  },
+                  error: function (request, status, error) {
+                      //alert(error);
+                  }
+              });
+            }
+          });
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+  });
+}
+
+/*********************************************************************************/
+
+function refreshCategory(val){
+  if (val==0){
+    var category = document.getElementById("cat").value;
+    
+    $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/loadWords',
+        dataType: 'text',
+        data: "category="+category,
+        success: function (results) {
+          var results1 = JSON.parse("[" + results + "]");
+          var results2 = results1[0];
+          
+          refreshWords(results2.wordjson);
+          var word_arr = []
+          for (var i=0;i<10;i++){
+            word_arr.push(results2.wordjson[i].key);
+          }
+          
+          loadVis(word_arr, results2.wordjson);
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+    });
+  }
+}
+function refreshWords(result_arr){
+  // document.getElementById('check').innerHTML = '';
+  // $('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()" onclick = "showWordBox('+i+')" style = "color:'+color(0)+';" > <input type="checkbox" id="myCheckbox" checked = "true" value = '+result_arr[0].key+' />'+result_arr[0].key+'</div><br><br>');
+  // for(var i=1; i< result_arr.length; i++){
+  //   if (i<10){
+  //     if (result_arr[i].key == "dummy") continue;
+  //     $('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()" onclick = "showWordBox('+i+')" style = "color:'+color(i)+';"> <input type="checkbox" id="myCheckbox" value = '+result_arr[i].key+' />'+result_arr[i].key+'</div><br><br>');
+  //   }
+  //   else{
+  //     //$('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()"><input type="checkbox" id="myCheckbox" value = '+result_arr[i].key+' />'+result_arr[i].key+'</div><br><br>'); 
+  //   }
+  // }
+  showWordBox(0);
+  $(".btn").on('click', function () {
+    var searchIDs = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+    //alert(searchIDs)
+    loadVis(searchIDs, result_arr);
+  });
+}
+function addWordToTopic(){
+  var searchIDs = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (searchIDs.length<1){
+    alert("Please select at least one topic to add the word")
+    return;
+  }
+  var newword = document.getElementById("tags").value;
+  if (newword== ''){
+    alert("Please enter a word to add");
+    return;
+  }
+  var cat_select = document.getElementById("cat").value;
+  var r = confirm("Are you sure you wants to add the word '"+newword+"' to topics - ("+searchIDs+") ?");
+  if (r == true) {
+    for (var i=0;i<searchIDs.length;i++){
+      $.ajax({
+          contentType: 'application/json; charset=utf-8',
+          url:'/data/topic1',
+          dataType: 'text',
+          data: "word="+newword+"&topic="+searchIDs[i]+"&category="+cat_select,
+          success: function (results) { 
+            console.log(results);
+          },
+          error: function (request, status, error) {
+              //alert(error);
+          }
+      });
+    }
+  }
+  location.reload();
+
+}
+function createNewTopic(){
+  var topiclabel = prompt("Enter the topic label", "NewTopic");
+  var category = document.getElementById("cat").value;
+  // if (topiclabel != null) {
+  //     $('#check').append('<div onmouseover = "dropTargetMouseOver(this)" onmouseout = "dropTargetMouseOut()"> <input type="checkbox" id="myCheckbox" value = '+topiclabel+' />'+topiclabel+'</div><br><br>');
+  // }
+  $.ajax({
+      contentType: 'application/json; charset=utf-8',
+      url:'/data/topic6',
+      dataType: 'text',
+      data: "topic="+topiclabel+"&category="+category,
+      success: function (results) {
+        console.log(results)
+      },
+      error: function (request, status, error) {
+          //alert(error);
+      }
+  });
+  location.reload();
+}
+function renameTopic(){
+  var searchIDs = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (searchIDs.length>1){
+    alert("Please select one topic at a time to rename")
+    return;
+  }
+  var select = document.getElementById("cat").value;
+  var newtopiclabel = prompt("Enter new topic label", searchIDs[0]);
+  $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/topic2',
+        dataType: 'text',
+        data: "category="+select+"&oldtopic="+searchIDs[0]+"&newtopic="+newtopiclabel,
+        success: function (results) {
+          console.log(results)
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+    });
+  location.reload();
+}
+function removeTopic(){
+  var searchIDs = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (searchIDs.length>1){
+    alert("Please select one topic at a time")
+    return;
+  }
+  var select = document.getElementById("cat");
+  var newtopiclabel = "dummy"
+  $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/topic3',
+        dataType: 'text',
+        data: "category=Shoes&oldtopic="+searchIDs[0]+"&newtopic="+newtopiclabel,
+        success: function (results) {
+          console.log(results)
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+    });
+    location.reload();
+}
+function removeTopicWord(){
+  var wordList = $("#wordbox input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (wordList.length<1){
+    alert("Please select at least 1 word to remove")
+    return;
+  }
+
+  var topicList = $("#check input:checkbox:checked").map(function(){
+      return $(this).val();
+    }).get(); 
+  if (topicList.length<1){
+    alert("Please select at least one topic")
+    return;
+  }
+
+  var select = document.getElementById("cat");
+
+  var r = confirm("Are you sure you wants to delete the words - ("+wordList+") from the topics - ("+topicList+") ?");
+  if (r == true) {
+    $.ajax({
+        contentType: 'application/json; charset=utf-8',
+        url:'/data/topic7',
+        dataType: 'text',
+        data: "category=Shoes&topics="+topicList+"&words="+wordList,
+        success: function (results) {
+          console.log(results)
+        },
+        error: function (request, status, error) {
+            //alert(error);
+        }
+    });
+  }
+  location.reload();
+}
+function loadVis(word_list, result_arr){
+  console.log(word_list)
+  console.log(result_arr)
+  var data_pos = [];
+  var data_neg = [];
+  var word_arr = [];
+  var gudrevcnt = [];
+  var badrevcnt = [];
+  var topic_pos_words = [];
+  var topic_neg_words = [];
+  for(var i=0; i< result_arr.length; i++){
+    if ($.inArray(result_arr[i].key, word_list) > -1){
+      word_arr.push(result_arr[i].key)
+      gudrevcnt.push(result_arr[i].pcount);
+      badrevcnt.push(result_arr[i].ncount);
+      data_pos.push(result_arr[i].Positivevalues);
+      data_neg.push(result_arr[i].Negativevalues);
+      topic_pos_words.push(result_arr[i].Words1);
+      topic_neg_words.push(result_arr[i].Words2);
+    }
+  }
+  d3.select("svg").remove();
+  var n = word_arr.length, // number of layers
+      m = data_pos[0].length, // number of samples per layer //makes the path wavy
+      ctr = -1,
+      ctr2 = -1,
+      stack = d3.layout.stack().offset("zero"),
+      layers0 = stack(d3.range(n).map(function() { return bumpLayer1(m, data_pos); })),            
+      layers1 = stack(d3.range(n).map(function() { return bumpLayer2(m, data_neg); }));
+
+  var width = 960,
+      height = 500;
+
+  var x = d3.time.scale().domain([new Date('01/01/2012'), new Date('01/10/2013')]).range([0, width]);
+
+
+  var y1 = d3.scale.linear()
+      .domain([0, d3.max(layers0, function(layer) { return d3.max(layer, function(d) { return d.y; }); })])
+      .range([height/2, 0]);
+  var y2 = d3.scale.linear()
+      .domain([0, d3.max(layers1, function(layer) { return d3.max(layer, function(d) { return d.y; }); })])
+      .range([height/2, height]);
+  var color = d3.scale.category10();
+  var area1 = d3.svg.area()
+              .x(function(d) { return x(d.x); })
+              .y0(function(d) { return height/2; })
+              .y1(function(d) { return y1(d.y); });
+  var area2 = d3.svg.area()
+              .x(function(d) { //console.log(x(d.x)); 
+                return x(d.x); })
+              .y0(function(d) { return height/2; })
+              .y1(function(d) { return y2(d.y); });
+  var div = d3.select("body").append("div")   
+              .attr("class", "tooltip")               
+              .style("opacity", 0);
+
+  var zoom = d3.behavior.zoom()
+                .x(x)
+                .scaleExtent([1,25])
+                .on("zoom", zoomed);
+
+  var svg = d3.select(".themeriver").append("svg")
+                .attr("width", width)
+                .attr("height", height+50)
+                .attr("transform", "translate(0,10)")
+                .call(zoom);
+  svg.selectAll(".path")
+      .data(layers0)
+      .enter().append("path")
+      .attr("class","path")
+      .attr("d", area1)
+      .style("fill", function(d,i) { return color(i%10); })
+      .on("mouseover", function(d, i) {
+          d3.selectAll('.path').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0;}})
+          d3.selectAll('.path2').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0;}});
+          div.transition()        
+              .duration(200)      
+              .style("opacity", .9);      
+          div .html("<strong>"+word_arr[i]+"<BR>Good review count : "+gudrevcnt[i] + "<BR>Bad review count : "+badrevcnt[i]+":</strong>")
+              .style("left", (d3.event.pageX - 250) + "px")     
+              .style("top", (d3.event.pageY) + "px");    
+
+          })                  
+      .on("mouseout", function(d) {     
+        d3.selectAll('.path').transition()
+              .style("opacity", 1);
+        d3.selectAll('.path2').transition()
+              .style("opacity", 1);  
+          div.transition()        
+              .duration(500)      
+              .style("opacity", 0);   
+      })
+      .on("click", function() {
+        document.getElementById("view2").innerHTML='<object type="text/html" data="Visualization.html" width = "960" height = "3000"></object>';
+      });
+  svg.selectAll(".path2")
+      .data(layers1)
+      .enter()
+      .append("path")
+      .attr("class","path2")
+      .attr("d", area2)
+      .style("fill", function(d,i) { return color(i%10); })
+      .on("mouseover", function(d, i) {
+          d3.selectAll('.path').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0}});
+          d3.selectAll('.path2').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0}});
+          div.transition()        
+              .duration(200)      
+              .style("opacity", .9);      
+          div .html("<strong>"+word_arr[i]+"<BR>Good review count : "+gudrevcnt[i] + "<BR>Bad review count : "+badrevcnt[i]+":</strong>")
+              .style("left", (d3.event.pageX - 250) + "px")     
+              .style("top", (d3.event.pageY) + "px");    
+          })                  
+      .on("mouseout", function(d) {   
+        d3.selectAll('.path').transition()
+              .style("opacity", 1);
+        d3.selectAll('.path2').transition()
+              .style("opacity", 1);    
+          div.transition()        
+              .duration(500)      
+              .style("opacity", 0);   
+      });
+  var line = svg.append("line")
+                          .attr("x1", 0)
+                          .attr("y1", height/2)
+                          .attr("x2", width)
+                          .attr("y2", height/2)
+                          .attr("stroke-width", 1)
+                         .attr("stroke", "black");
+  var xAxis = d3.svg.axis()
+                .scale(x)
+                .orient("bottom")
+                .ticks(5)
+                .tickSize(2);
+
+  svg.append("g")
+    .attr("class", "x axis")
+    .attr("transform", "translate(0," + 500 + ")")
+    .call(xAxis);
+
+  var yAxisTop = d3.svg.axis().scale(y1)
+    .orient("left").ticks(5);
+  
+  svg.append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(0,0)")
+    .call(yAxisTop);
+
+  var yAxisBottom = d3.svg.axis().scale(y2)
+    .orient("left").ticks(5);
+  
+  svg.append("g")
+    .attr("class", "y axis")
+    .attr("transform", "translate(0,0)")
+    .call(yAxisBottom);
+
+  function bumpLayer1(n, data_samplesx) {
+    var a = [], i;
+    ctr++;
+    for (i = 0; i < n; ++i) a[i] = 0;
+    var st_dt = new Date('01/10/2012');
+    //return a.map(function(d, i) { return {x: new Date(new Date(st_dt).setMonth(st_dt.getMonth()+i)), y: data_samplesx[ctr][i]}; });
+    return a.map(function(d, i) { return {x: new Date(new Date(st_dt).getTime() + 7*i*24*60*60*1000), y: data_samplesx[ctr][i]}; });
+  }
+  function bumpLayer2(n, data_samplesy) {
+    var a = [], i;
+    ctr2++;
+    for (i = 0; i < n; ++i) a[i] = 0;
+    var st_dt = new Date('01/10/2012');
+    //return a.map(function(d, i) { return {x: new Date(new Date(st_dt).setMonth(st_dt.getMonth()+i)), y: data_samplesy[ctr2][i]}; });
+    return a.map(function(d, i) { return {x: new Date(new Date(st_dt).getTime() + 7*i*24*60*60*1000), y: data_samplesy[ctr2][i]}; });
+  }
+  function zoomed() {
+    var currentZoom = d3.event.scale;
+
+    svg.selectAll('.path').remove();
+    svg.selectAll('.path2').remove();
+    svg.selectAll('.topicwords').remove();
+
+    svg.select("g.x.axis").call(xAxis);
+    svg.selectAll(".path")
+      .data(layers0)
+      .enter().append("path")
+      .attr("class","path")
+      .attr("d", area1)
+      .style("fill", function(d,i) { return color(i%10); })
+      .on("mouseover", function(d, i) {
+          svg.selectAll('.topicwords').remove();
+          if (currentZoom > 5){
+            for(ind=0;ind<topic_pos_words[i].length;ind++){
+              
+              if(topic_pos_words[i][ind] == 0){
+                console.log("");
+              }
+              else{
+                word_ind = 0;
+                for(var wi = 0;wi<topic_pos_words[i][ind].length;wi++){
+                  textHeight = height/2 - (word_ind * 14) - 10;
+                  if(topic_pos_words[i][ind][wi]!=""){
+                      word_ind++;
+                    }
+                  yHeight = y1(d[ind].y);
+                  if (textHeight > yHeight){
+                    wordText = svg.append("text")
+                                .attr("class","topicwords")
+                                .attr("x", x(d[ind].x)-13)
+                                .attr("y", textHeight)
+                                .attr("font-size","10")
+                                .attr("dy", ".35em")
+                                .text(topic_pos_words[i][ind][wi]);
+                  }
+                }
+              }
+            }
+          }
+          d3.selectAll('.path').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0;}})
+          d3.selectAll('.path2').transition()
+                .style("opacity",function(d,i1){if (i!= i1){ return 0;}});
+          div.transition()        
+              .duration(200)      
+              .style("opacity", .9);      
+          /*div .html("<strong>"+word_arr[i]+"<BR>Good review count : "+gudrevcnt[i] + "<BR>Bad review count : "+badrevcnt[i]+":</strong>")
+              .style("left", (d3.event.pageX - 250) + "px")     
+              .style("top", (d3.event.pageY) + "px");    */
+
+          })                  
+      .on("mouseout", function(d) {  
+        svg.selectAll('.topicwords').remove();
+        d3.selectAll('.path').transition()
+              .style("opacity", 1);
+        d3.selectAll('.path2').transition()
+              .style("opacity", 1);  
+          div.transition()        
+              .duration(500)      
+              .style("opacity", 0);   
+      })
+      .on("click", function() {
+        document.getElementById("view2").innerHTML='<object type="text/html" data="Visualization.html" width = "960" height = "3000"></object>';
+      });
+      svg.selectAll(".path2")
+        .data(layers1)
+        .enter()
+        .append("path")
+        .attr("class","path2")
+        .attr("d", area2)
+        .style("fill", function(d,i) { return color(i%10); })
+        .on("mouseover", function(d, i) {
+            svg.selectAll('.topicwords').remove();
+            if (currentZoom > 5){
+              for(ind=0;ind<topic_neg_words[i].length;ind++){
+                
+                if(topic_neg_words[i][ind] == 0){
+                  //console.log("");
+                }
+                else{
+                  word_ind = 0;
+                  for(var wi = 0;wi<topic_neg_words[i][ind].length;wi++){
+                    textHeight = height/2 + (word_ind * 14) + 10;
+                    if(topic_neg_words[i][ind][wi]!=""){
+                      word_ind++;
+                    }
+                    yHeight = y2(d[ind].y);
+                    if (textHeight < yHeight){
+                      wordText = svg.append("text")
+                                  .attr("class","topicwords")
+                                  .attr("x", x(d[ind].x)-10)
+                                  .attr("y", textHeight)
+                                  .attr("font-size","10")
+                                  .attr("dy", ".35em")
+                                  .text(topic_neg_words[i][ind][wi]);
+                    }
+                  }
+                }
+              }
+            }
+            d3.selectAll('.path').transition()
+                  .style("opacity",function(d,i1){if (i!= i1){ return 0}});
+            d3.selectAll('.path2').transition()
+                  .style("opacity",function(d,i1){if (i!= i1){ return 0}});
+            div.transition()        
+                .duration(200)      
+                .style("opacity", .9);      
+            div .html("<strong>"+word_arr[i]+"<BR>Good review count : "+gudrevcnt[i] + "<BR>Bad review count : "+badrevcnt[i]+":</strong>")
+                .style("left", (d3.event.pageX - 250) + "px")     
+                .style("top", (d3.event.pageY) + "px");    
+            })                  
+        .on("mouseout", function(d) {   
+          svg.selectAll('.topicwords').remove();
+          d3.selectAll('.path').transition()
+                .style("opacity", 1);
+          d3.selectAll('.path2').transition()
+                .style("opacity", 1);    
+            div.transition()        
+                .duration(500)      
+                .style("opacity", 0);   
+        });
+      var line = svg.append("line")
+                          .attr("x1", 0)
+                          .attr("y1", height/2)
+                          .attr("x2", width)
+                          .attr("y2", height/2)
+                          .attr("stroke-width", 1)
+                         .attr("stroke", "black");
+  }    
+}
+</script>
+<body>
+<div id = "view2">
+</div>
+</body>

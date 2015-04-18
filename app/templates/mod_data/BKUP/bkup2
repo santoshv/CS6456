@@ -1,5 +1,4 @@
 
-from py2neo import Graph, Path, Node, Relationship, neo4j
 from flask import Blueprint, request, render_template, redirect, url_for
 import gzip
 import simplejson
@@ -12,10 +11,6 @@ import json, re
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from datetime import date, datetime, timedelta
-import sys, string, random, numpy
-from llda import LLDA
-from optparse import OptionParser
-from nltk.corpus import reuters
 
 stemmer = PorterStemmer()
 
@@ -142,7 +137,7 @@ def index2():
 @mod_data.route('/getComments')
 def getComments():
 	keywordString = request.args.get('key', '')
-	db = cl["amazon2"]
+	db = cl["amazon"]
 	keywordArr = keywordString.split("|")
 	query = []
 	for keyword in keywordArr:
@@ -155,7 +150,7 @@ def getComments():
 	return ''.join(result_set)
 @mod_data.route('/getComments2')
 def getComments2():
-	db = cl["amazon2"]
+	db = cl["amazon"]
 	keywordString = request.args.get('key', '')
 	#keywordString = "confortable|slick";
 	keywordArr = keywordString.split("|")
@@ -187,7 +182,7 @@ def showWordTree():
 	return render_template('/mod_data/wordtree2.html')
 @mod_data.route('/loadCat')
 def loadCat():
-	db = cl["amazon2"]
+	db = cl["amazon"]
 	return_string = {}
 	wordString = []
 	cats = db.catkeys.distinct('category');
@@ -196,8 +191,6 @@ def loadCat():
 	dateRange = db.catkeys.find_one({"category":cats[0]},{'st_dt':1,'end_dt':1, '_id' : 0})
 	start_dt =  dateRange['st_dt']
 	end_dt =  dateRange['end_dt']
-	print start_dt
-	print end_dt
 
 	return_string["categories"] = cats;
 	for word in wordFreq:
@@ -230,40 +223,17 @@ def loadCat():
 	  return_string["wordjson"]=wordString;
 	return simplejson.dumps(return_string);
 
-@mod_data.route('/loadTopics')
-def loadTopics():
-	#cats = request.args.get('category', '')
-	cats = "Shoes"
-	db1 = cl["amazon2"]
-	return_string = {}
-	wordString = []
-
-	topic_list = db1.topic_words.find( { "category" : cats},{"topic":1,"_id" :0} );
-	print topic_list
-	topic_array, comment_array = [],[]
-	for topic in topic_list:
-		topic_array.append(topic['topic']);
-	comments_list = db1.Shoes.find({},{"text":1,"_id":0}).limit(13);
-	for comment in comments_list:
-		comment_array.append(comment);
-	return_string = {}
-	return_string["comments"] = comment_array;
-	return_string["topics"] = topic_array;
-	return simplejson.dumps(return_string);
-
 @mod_data.route('/loadWords')
 def loadWords():
 	cats = request.args.get('category', '')
-	#cats = "CellAccessories"
-	db = cl["amazon2"]
+	cats = "CellAccessories"
+	db = cl["amazon"]
 	return_string = {}
 	wordString = []
-	
 	dateRange = db.catkeys.find_one({"category":cats},{'st_dt':1,'end_dt':1, '_id' : 0})
 	start_dt =  dateRange['st_dt']
 	end_dt =  dateRange['end_dt']
-
-	wordFreq = db.catkeys.find({"category":cats});
+	wordFreq = db.catkeys1.find({"category":cats});
 	for word in wordFreq:
 	  dtcArrPositive,dtcArrNegative,dtcArrWords1, dtcArrWords2 = {},{},{},{}
 	  newarrPositive,newarrNegative,newarrWords1, newarrWords2 = [],[],[],[]
@@ -272,16 +242,15 @@ def loadWords():
 		dtcArrNegative[dtc['date']] = dtc['negativeCount']
 		dtcArrWords1[dtc['date']] = dtc['poswords']
 		dtcArrWords2[dtc['date']] = dtc['negwords']
-	  temp_date = datetime.strptime(start_dt, "%Y-%m-%d")
-	  curdate = temp_date - timedelta(temp_date.weekday())
+	  curdate = datetime.strptime(start_dt, "%Y-%m-%d")
 	  last_date = datetime.strptime(end_dt, "%Y-%m-%d");
 	  while curdate < last_date:
-	  	strpart = curdate.strftime('%Y-%m-%d')
+	  	strpart = str(curdate)[0:7];
 		newarrPositive.append(dtcArrPositive.get(strpart, 0))
 		newarrNegative.append(dtcArrNegative.get(strpart, 0))
 		newarrWords1.append(dtcArrWords1.get(strpart, 0))
 		newarrWords2.append(dtcArrWords2.get(strpart, 0))
-		curdate = curdate + dt1.timedelta(days=7);
+		curdate = datetime.strptime(strpart+"-01", "%Y-%m-%d") + dt1.timedelta(days=31);
 	  wordString.append({
 			"key": word["word"],
 			"Positivevalues": newarrPositive,
@@ -293,245 +262,3 @@ def loadWords():
 		})
 	  return_string["wordjson"]=wordString;
 	return simplejson.dumps(return_string);
-
-
-@mod_data.route('/topic1')
-def topic_mod1():
-	##For creating a new topic
-	word = request.args.get('word', '')
-	wordjson={}
-	wordjson['word'] = word
-	wordjson['weight'] = 1
-	topic = request.args.get('topic', '')
-	cat = request.args.get('category', '')
-	db = cl["amazon"]
-	db1 = cl["amazon2"]
-
-	v = db1.topic_words.find( {"category" : cat,"topic":topic })
-	count = 0;
-	for record in v:
-		count += 1;
-	if (count>0):
-		v = db1.topic_words.update( {"category" : cat,"topic":topic } ,{"$addToSet": { "words": wordjson }});
-	else:
-		word_arr= []
-		word_arr.append(wordjson)
-		v = db1.topic_words.insert( {"category" : cat,"topic":topic , "words": word_arr});
-
-	v = db1.shoekeys1.update( {"wordlist.word" : word } , {"$addToSet" : {"wordlist.$.topic" : topic} }, upsert=False, multi=True);
-	topic_mod5();
-	# v = db.catkeys.remove( { "category" : "Shoes" } );
-	# result  = db.shoekeys.aggregate([
-	# 	  {'$unwind': '$wordlist' },
-	# 	  {'$project': { '_id': 0, "category": {'$concat': ["Shoes"]},"st_dt": {'$concat': ["2008-01-01"]}, "end_dt": {'$concat': ["2013-01-01"]},
-	# 	  'word1' : {'$cond': { 'if': { '$gte': [ "$score", '4.0' ] }, 'then': "$wordlist.word", 'else': '' }}, 
-	# 	  'word2' : {'$cond': { 'if': { '$lte': [ "$score", '3.0' ] }, 'then': "$wordlist.word", 'else': '' }},
-	# 	  'wordlist.topic': 1,
-	# 	  'date':1, 'dateweek':1, 'score1': {'$cond': { 'if': { '$gte': [ "$score", '4.0' ] }, 'then': 1, 'else': 0 }}, 
-	# 	  'score2': {'$cond': { 'if': { '$lte': [ "$score", '3.0' ] }, 'then': 1, 'else': 0 }}
-	# 	  } 
-	# 	  },
-	# 	  { "$group": {
-	# 	        "_id": {
-	# 	            "wordlist": "$wordlist.topic",
-	# 	            "date": "$dateweek"
-	# 	        },
-	# 	        "positiveCount": { "$sum": "$score1" },
-	# 	        "negativeCount": { "$sum": "$score2" },
-	# 	        "poswords": { "$addToSet": "$word1" },
-	# 	        "negwords": { "$addToSet": "$word2" },
-	# 	        "category" : { '$max': "$category" },
-	# 	        "st_dt" : { '$max': "$st_dt" },
-	# 	        "end_dt" : { '$max': "$end_dt" }
-	# 	    }},
-	# 	  { "$group": {
-	# 	        "_id": "$_id.wordlist",
-	# 	        "dateCounts": { 
-	# 	            "$push": { 
-	# 	                "date": "$_id.date",
-	# 	                "poswords": "$poswords",
-	# 	                "negwords": "$negwords",
-	# 	                "positiveCount": "$positiveCount",
-	# 	                "negativeCount": "$negativeCount"
-	# 	            },
-	# 	        },
-	# 	        "category" : { '$max': "$category" },
-	# 	        "st_dt" : { '$max': "$st_dt" },
-	# 	        "end_dt" : { '$max': "$end_dt" },
-	# 	        "positiveWordCount": { "$sum": "$positiveCount" },
-	# 	        "negativeWordCount": { "$sum": "$negativeCount" },
-	# 	        "totalAmount": { '$sum': { '$add': [ "$positiveCount", "$negativeCount" ] } }
-	# 	    }},
-	# 	    {'$project': { '_id':0, 'word': "$_id", 'dateCounts': 1, 'category' : 1, 'st_dt' : 1, 'end_dt' : 1, 'totalAmount':1, 'positiveWordCount':1, "negativeWordCount":1 }},
-	# 	    {'$sort': { 'totalAmount': -1 } },
-	# 	  { '$limit': 50 }
-	# 	 ])
-	
-	# v = db.catkeys.insert(result['result']);
-	return "hello";
-@mod_data.route('/topic2')
-def topic_mod2():
-	##For renaming an existing topic
-	cats = request.args.get('category', '')
-	old_topic = request.args.get('oldtopic', '')
-	new_topic = request.args.get('newtopic', '')
-	print cats
-	print old_topic
-	print new_topic
-	db = cl["amazon2"]
-
-	v = db.shoekeys1.update( {"wordlist.topic" :old_topic},{"$set" : {"wordlist.$.topic" : new_topic}},upsert=False, multi=True);
-
-	v = db.topic_words.update( {"category" : cats, "topic":old_topic },{'$set' : {"topic":new_topic}},upsert=False, multi=True);
-
-	return "hello"
-@mod_data.route('/topic3')
-def topic_mod3():
-	##For removing an existing topic
-	cats = request.args.get('category', '')
-	old_topic = request.args.get('oldtopic', '')
-	db = cl["amazon2"]
-	# v = db.shoekeys1.update( {"wordlist.topic" : old_topic } , {"$pull" : {"wordlist.$.topic" : old_topic} }, upsert=False, multi=True);
-	v = db.shoekeys1.update( {"wordlist.topic" :old_topic},{"$set" : {"wordlist.$.topic" : "dummy"}},upsert=False, multi=True);
-	v = db.topic_words.remove( {"category" : cats, "topic":old_topic });
-	return "hello"
-
-@mod_data.route('/topic4')
-def topic_mod4():
-	##For fetching words from topics
-	db = cl["amazon2"]
-	results = db.topic_words.find({},{"_id":0});
-	result_set=[];
-	for record in results:
-		result_set.append(record);
-	return simplejson.dumps(result_set);
-
-@mod_data.route('/topic5')
-def topic_mod5():
-	##For fetching words from topics
-	parser = OptionParser()
-	parser.add_option("--alpha", dest="alpha", type="float", help="parameter alpha", default=0.001)
-	parser.add_option("--beta", dest="beta", type="float", help="parameter beta", default=0.001)
-	parser.add_option("-k", dest="K", type="int", help="number of topics", default=50)
-	parser.add_option("-i", dest="iteration", type="int", help="iteration count", default=100)
-	parser.add_option("-s", dest="seed", type="int", help="random seed", default=None)
-	parser.add_option("-n", dest="samplesize", type="int", help="dataset sample size", default=100)
-	(options, args) = parser.parse_args()
-	random.seed(options.seed)
-	numpy.random.seed(options.seed)
-	
-	idlist = random.sample(reuters.fileids(), options.samplesize)
-
-	labels = []
-	corpus = []
-	labelset = []
-
-	db = cl["amazon2"]
-	results = db.topic_words.find({"category":"Shoes"},{"_id":0, "category":0});
-	result_set=[];
-	for record in results:
-		topicset = []
-		topicset.append(record["topic"])
-		labels.append(topicset)
-		labelset.append(record["topic"])
-		wordlist = []
-		for wordjson in record["words"]:
-			wordlist.append(wordjson['word'])
-		print wordlist
-		corpus.append([x.lower() for x in wordlist if x!='' and (x[0] in string.ascii_letters)])	
-
-	llda = LLDA(options.K, options.alpha, options.beta)
-	llda.set_corpus(labelset, corpus, labels)
-
-	# print "M=%d, V=%d, L=%d, K=%d" % (len(corpus), len(llda.vocas), len(labelset), options.K)
-
-	for i in range(options.iteration):
-	    sys.stderr.write("-- %d : %.4f\n" % (i, llda.perplexity()))
-	    llda.inference()
-	print "perplexity : %.4f" % llda.perplexity()
-
-	phi = llda.phi()
-	results = db.topic_words.drop();
-	for k, label in enumerate(labelset):
-	    print "\n-- label %d : %s" % (k, label)
-	    wordlist = []
-	    for w in numpy.argsort(-phi[k])[:20]:
-	    	wordjson = {}
-	    	print "%s: %.4f" % (llda.vocas[w], phi[k,w])
-	    	wordjson['word'] = llda.vocas[w]
-	    	wordjson['weight'] = phi[k,w]
-	        wordlist.append(wordjson)
-	        v = db.shoekeys1.update( {"wordlist.word" : llda.vocas[w] } , 
-                {"$addToSet" : {"wordlist.$.topic" : label} }, upsert=False, multi=True);
-	    if (label!= "common"):
-	    	db.topic_words.insert({"category":"Shoes", "topic":label, "words" : wordlist })
-	# return "hello";
-
-@mod_data.route('/topic6')
-def topic_mod6():
-	## for creating a new topic
-	topic = request.args.get('topic', '')
-	cat = request.args.get('category', '')
-	db = cl["amazon2"]
-
-	v = db.topic_words.find( {"category" : cat,"topic":topic })
-	count = 0;
-	for record in v:
-		count += 1;
-	if (count==0):
-		word_arr= []
-		v = db.topic_words.insert( {"category" : cat,"topic":topic , "words": word_arr});
-	return "hello"
-
-@mod_data.route('/topic7')
-def topic_mod7():
-	## for deleting words from topics
-	topics = request.args.get('topics', '')
-	cat = request.args.get('category', '')
-	words = request.args.get('words', '')
-
-	db = cl["amazon2"]
-
-	wordList = words.split(",")
-	topicList = topics.split(",")
-
-	for word in wordList:
-		for topic in topicList:
-			v = db.shoekeys1.update( {"wordlist.word" : word } , {"$pull" : {"wordlist.$.topic" : topic } }, upsert=False, multi=True);
-			v = db.topic_words.update({"topic":topic},{"$pull" : {"words" : { "word": word } } })
-	return "hello"
-
-@mod_data.route('/topic8')
-def topic_mod8():
-	## For retrieving products
-	topics = request.args.get('topics', '')
-	cat = request.args.get('category', '')
-	topicList = topics.split(",")
-	wordList = "";
-	db = cl["amazon2"]
-	for topic in topicList:
-		v = db.topic_words.find( {"category" : cat,"topic":topic },{"words":1, "_id":0})
-		for value in v:
-			for word in value['words']:
-				wordList = wordList+word['word']+" "
-	print wordList;
-	wordList = wordList.rstrip()
-	print "hello"
-	result = db.Shoes.aggregate(
-	   [
-	   	 { '$match': { '$text': { '$search': wordList } , 'price': { '$ne': "unknown" } } },   	 
-	     {
-	       '$group':
-	         {
-	           '_id': "$productId",
-	           'score': { '$avg': "$score" },
-	           "title" : { '$max': "$title" },
-	           "price" : { '$max': "$price" }
-	         }
-	     },
-	     {'$sort': { 'score': -1 } },
-	     { '$limit': 10 },
-	     {'$project': { '_id': 1, 'score': 1, 'title':1, 'price':1} }	     
-	   ]
-	)
-	return simplejson.dumps(result['result']);
