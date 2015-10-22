@@ -1,5 +1,6 @@
 from flask import Blueprint, request, render_template, redirect, url_for
 import pymysql
+import simplejson
 
 mod_data = Blueprint('mod_data', __name__, url_prefix = '/data')
 
@@ -10,12 +11,18 @@ cur = conn.cursor()
 def index1():
 	return render_template('/mod_data/index1.html')
 
-@mod_data.route('/topic1')
-def topic_mod1():
+@mod_data.route('/retrieve_schema')
+def retrieve_schema():
 	##For creating a new topic
-	# word = request.args.get('word', '')
-	# topic = request.args.get('topic', '')
-	# cat = request.args.get('category', '')
-	cur.execute("delete from topic_words where topic = '"+topic+"' and category = '"+cat+"' and word is null")
-	cur.execute("INSERT INTO topic_words (category, topic, word, weight) VALUES ('"+cat+"', '"+topic+"','"+word+"', 0) ON DUPLICATE KEY UPDATE  weight=VALUES(weight)")
-	return "hello";
+	dbid = request.args.get('dbid', '')
+	cur.execute("select db_id, db_name, db_desc from schema_master where db_id = "+dbid)
+	result_str = []
+	for row in cur:
+		result_str.append(row);
+	return simplejson.dumps(result_str);
+
+
+@mod_data.route('/get_fields')
+def get_fields():
+	#input
+	#output
