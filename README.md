@@ -1,4 +1,4 @@
-CS8903
+CS6456
 ======
 
-Special Problem
+Principles of UI Software
