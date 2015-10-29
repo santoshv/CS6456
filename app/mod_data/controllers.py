@@ -21,8 +21,16 @@ def retrieve_schema():
 		result_str.append(row);
 	return simplejson.dumps(result_str);
 
+@mod_data.route('/retrieve_schema_list')
+def retrieve_schema_list():
+	cur.execute("select db_id, db_name, db_desc from schema_master order by db_id")
+	result_str = []
+	for row in cur:
+		result_str.append(row);
+	return simplejson.dumps(result_str);
 
 @mod_data.route('/get_fields')
 def get_fields():
 	#input
 	#output
+	return "hi"
