@@ -4,10 +4,7 @@ from flask import Flask, render_template
 
 # Define the WSGI application object
 app = Flask(__name__)
-# app.config["MONGODB_SETTINGS"] = {'DB': "amazon"}
 app.config["SECRET_KEY"] = "KeepThisS3cr3t"
-
-# db = MongoEngine(app)
 
 # Sample HTTP error handling
 @app.errorhandler(404)
