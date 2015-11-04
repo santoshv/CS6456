@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>GestViz-Main Page</title>
+
+<script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.js"></script>
+<script src="/static/lib/leap-0.6.4.min.js"></script>
+<script src="/static/lib/jquery-1.10.2.min.js"></script>
+<script src="/static/lib/jquery-ui.min.js"></script>
+<script src="/static/lib/highlight/jquery.highlight.js"></script>
+<script src="/static/lib/d3.v3.min.js"></script>
+<script src="/static/lib/d3.tip.v0.6.3.js"></script>
+<script src="/static/js/drawmain.js"></script>
+<script src="/static/js/leapmotion.js"></script>
+
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  margin: auto;
+  position: relative;
+  width: 960px;
+}
+#gesture_output{
+  font-size: 66px;
+  color: #005d98;
+  text-align: left;
+  position: fixed;
+  bottom: 18px;
+}
+
+</style>
+
+<body>
+  <div id="schema_disp"></div>
+  <div id="gesture_output"></div>
+</body>
+
+<script type="text/javascript">
+  // Set up the controller:
+  gesture_output.innerHTML = "Make a fist to bring up datasets";
+
+  controller.on('frame', processFrameForFist);
+  controller.connect();
+
+  function getFist(hand,index,hands) {
+    gesture_output.innerHTML = hand.grabStrength.toPrecision(2);
+    if(hand.grabStrength.toPrecision(2) == 1.00) {
+      gesture_output.innerHTML = "Fist";
+      controller.disconnect();
+      show_schema();
+    }
+  }
+
+  function show_table(table_list) {
+    //show table in div schema_disp
+    controller.on('frame', processFrameForNumber);
+    controller.connect(); 
+  }
+
+  function getNumber(hand,index,hands) {
+    gesture_output.innerHTML = "checking finger number";
+    var extendedFingerCount = hand.fingers.filter(
+                function(finger, index, fingers) {return finger.extended}).length;
+    switch (extendedFingerCount){
+      // case 0:
+      //   console.log("showing fist");
+      //   break;
+      case 1:
+        console.log("select dataset 1");
+        //set session variable
+        break;
+      case 2:
+        console.log("select dataset 2");
+        break;
+      case 3:
+        console.log("select dataset 3");
+        break;
+      case 4:
+        console.log("select dataset 4");
+        break;
+      case 5:
+        console.log("select dataset 5");
+        break;
+    }
+    if(extendedFingerCount>0) {
+      gesture_output.innerHTML = "select dataset " + extendedFingerCount;
+      // if(controller.connected())
+      //   alert("controller connected");
+      controller.disconnect();
+      if(controller.connected())
+        alert("controller connected");
+      show_dataset();
+    }
+  }
+
+  function show_dataset() {
+    //show_dataset
+  }
+
+</script>

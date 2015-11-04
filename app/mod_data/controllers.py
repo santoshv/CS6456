@@ -13,6 +13,10 @@ cur = conn.cursor()
 def index1():
 	return render_template('/mod_data/index1.html')
 
+@mod_data.route('/main.html')
+def main():
+	return render_template('/mod_data/main.html')
+
 @mod_data.route('/retrieve_schema_list')
 def retrieve_schema_list():
 	#For the main.html screen
