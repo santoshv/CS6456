@@ -16,22 +16,17 @@ function populate_criteria(){
 
 function makeRadioButton(name, value, text) {
 	var div = document.createElement("div");
-	div.style.width = "300px"; 
-	div.style.height = "100px"; 
+	div.style.width = "500px"; 
+	div.style.height = "auto"; 
 	div.style.background = "Blue"; 
 	div.style.color = "white"; 
 	div.style.border = "thick solid #FFFFFF";
-
-	var radio = document.createElement("input");
-	radio.type = "radio";
-	radio.name = name;
-	radio.value = value;
-	radio.onclick = function() {
-        setScale(this.value)
+	div.style.align = "middle";
+	div.innerHTML = "<h1><center>"+text+"</center></h1>";
+	div.onclick = function() {
+		setScale(value)
     };
-	div.appendChild(radio);
 
-	div.appendChild(document.createTextNode(text));
 	return div;
 }
 
