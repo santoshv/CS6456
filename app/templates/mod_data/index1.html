@@ -22,15 +22,15 @@
 <style>
 
 body {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  
   margin: auto;
   position: relative;
-  width: 960px;
+  width: 1080px;
 }
 #gesture_output{
-  font-size: 66px;
+  font-size: 15px;
   color: #005d98;
-  text-align: left;
+  text-align: center;
   position: fixed;
   bottom: 18px;
 }
@@ -38,10 +38,12 @@ body {
 
 </style>
 <body onload="myFunction()">
+<div id="clustertext" style="color:#005d98">
+  <span style="float: left;"><h2>CLUSTER SETTINGS Swipe--></h2></span> 
+  <span style="float: right;"><h2><--Swipe FILTER SETTINGS</h2></span>
+</div>
 <div id = 'outerbox'>
-<button onclick="show_schema()">Show schemalist</button>
-<button onclick="show_info()">Show Info</button>
-<div id="gesture_output"></div>
+<div id="gesture_output" style = "display:none;"></div>
 <div style="display: none;overflow:scroll;" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
       <div class="modal-dialog">
           <div class="modal-content">
@@ -61,5 +63,9 @@ body {
 <div id = "viz"></div>
 <button onclick="show_filter_screen()">Filter data</button>
 <button onclick="show_criteria_screen()">Select clusterting criteria</button>
+
+<button onclick="show_schema()">Show schemalist</button>
+<button onclick="show_info()">Show Info</button>
 </div>
 <body>
+<script src="/static/js/indexleap.js"></script>  
