@@ -2,6 +2,7 @@
 <meta charset="utf-8">
 <title>GestViz</title>
 <script src="/static/js/showscreens.js"></script>
+<script src="/static/js/criteria.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/three.js/r67/three.js"></script>
 <script src="/static/lib/jquery-1.10.2.min.js"></script>
 <script src="/static/lib/jquery-ui.min.js"></script>
@@ -37,29 +38,12 @@ body {
 
 
 </style>
-<body onload="myFunction()">
+<body onload="populate_criteria()">
 <div id = 'outerbox'>
-<button onclick="show_schema()">Show schemalist</button>
-<button onclick="show_info()">Show Info</button>
-<div id="gesture_output"></div>
-<div style="display: none;overflow:scroll;" class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
-      <div class="modal-dialog">
-          <div class="modal-content">
-              <div class="modal-header">
-                  <button type="button" class="close" data-dismiss="modal">
-                      <span aria-hidden="true">&times;</span>
-                      <span class="sr-only">Close</span>
-                  </button>
-                  <h4 class="modal-title" id="myModalLabel"></h4>
-              </div>
-              <div class="modal-body" id = "myModalBody" style="overflow: scroll;">
-              </div>
-              <div class="modal-footer" id = "myModalFooter"></div>
-          </div>
-      </div>
-  </div>
-<div id = "viz"></div>
+  <h1>Select field for clustering</h1>
+  <div id="radio_home"></div>
+
+<button onclick="show_main_screen()">Show plot</button>
 <button onclick="show_filter_screen()">Filter data</button>
-<button onclick="show_criteria_screen()">Select clusterting criteria</button>
 </div>
-<body>
+</body>

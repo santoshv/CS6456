@@ -1,23 +1,44 @@
-$(function(){
-  $.ajax({
-      contentType: 'application/json; charset=utf-8',
-      url:'/data/retrieve_schema_list',
-      dataType: 'text',
-      success: function (results) {
-        console.log(results);
-    },
-    error: function (request, status, error) {
-        //alert(error);
-    }
-  });
-});
+function myFunction(){
+  gesture_output.innerHTML = "Make a fist to bring up datasets";
+  if (!localStorage['done']) {
+       localStorage['done'] = 'yes';
+       $.ajax({
+          contentType: 'application/json; charset=utf-8',
+          url:'/data/setdbid',
+          dataType: 'text',
+          data: "dbid=2",
+          success: function (results) {
+            draw_plot();
+            controller.on('frame', processFrameForFist);
+            controller.connect();
+          }
+        });
+  }
+  else{
+    draw_plot();
+    controller.on('frame', processFrameForFist);
+    controller.connect();
+  }
+};
 
+function getFist(hand,index,hands) {
+  gesture_output.innerHTML = hand.grabStrength.toPrecision(2);
+  if(hand.grabStrength.toPrecision(2) == 1.00) {
+    gesture_output.innerHTML = "Fist";
+    show_schema();
+    controller.on('gesture', closeBox);
+  }
+}
+function closeBox(gesture) {
+  console.log(gesture.type);
+  $('#myModal').modal('hide');
+  //controller.disconnect();
+}
 function draw_plot(){
   $.ajax({
       contentType: 'application/json; charset=utf-8',
       url:'/data/get_scatterplot_points',
       dataType: 'text',
-      data: "dbid=2&fname=profit&ftype=1&filters=1*profit*1*10,2*category*Coffee",
       success: function (results) {
         // ---
         // Handle dragging from HTML to dropping on SVG
@@ -114,6 +135,16 @@ function draw_plot(){
              .attr("r", 5)
              .style("fill", color(i));
         }
+        svg1.selectAll('.scale').remove();
+        console.log(results1[0]);
+        var cc = svg1.append("text")
+                     .attr("x", 400)
+                     .attr("y", 520)
+                     .attr('class', 'scale')
+                     .style('fill', "black")
+                     .attr("font-size", "30px")
+                     .text(function(d) { return results1[0]["field_name"]; });
+
         var legendRectSize = 18;
         var legendSpacing = 4;
         var legend = svg1.selectAll('.legend')

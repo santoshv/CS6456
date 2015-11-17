@@ -30,3 +30,9 @@ function processFrameForNumber(frame) {
     frame.hands.forEach(getNumber);
   }
 }
+
+// function processFrameForSwipe(frame) {
+//   if (frame.valid && frame.gestures.length > 0) {
+//     frame.gestures.forEach(closeBox);
+//   }
+// }

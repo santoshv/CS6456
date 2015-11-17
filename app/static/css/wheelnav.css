@@ -1,0 +1,26 @@
+
+.divclass {
+    height: 300px;
+    width: 300px;
+    margin: auto;
+}
+
+/*
+.divclass>svg {
+    height: 100%;
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .divclass {
+        height: 350px;
+        width: 350px;
+    }
+}
+
+@media (max-width: 400px) {
+    .divclass {
+        height: 300px;
+        width: 300px;
+    }
+}*/
